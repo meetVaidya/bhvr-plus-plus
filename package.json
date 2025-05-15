@@ -19,10 +19,17 @@
 	},
 	"keywords": ["bun", "hono", "react", "vite", "monorepo"],
 	"devDependencies": {
+		"@tanstack/eslint-plugin-query": "^5.74.7",
+		"@tanstack/router-plugin": "^1.120.3",
 		"bun-types": "latest",
 		"concurrently": "^9.1.2"
 	},
 	"peerDependencies": {
 		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"@tanstack/react-query": "^5.76.1",
+		"@tanstack/react-router": "^1.120.3",
+		"@tanstack/react-router-devtools": "^1.120.3"
 	}
 }
