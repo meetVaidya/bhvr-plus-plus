@@ -1,12 +1,10 @@
-# bhvr 🦫
+# bhvr++
 
-![cover](https://cdn.stevedylan.dev/ipfs/bafybeievx27ar5qfqyqyud7kemnb5n2p4rzt2matogi6qttwkpxonqhra4)
+A full-stack TypeScript monorepo starter with shared types, using Bun, Hono, Vite, React and Tanstack
 
-A full-stack TypeScript monorepo starter with shared types, using Bun, Hono, Vite, and React
+## Why bhvr++?
 
-## Why bhvr?
-
-While there are plenty of existing app building stacks out there, many of them are either bloated, outdated, or have too much of a vendor lock-in. bhvr is built with the opinion that you should be able to deploy your client or server in any environment while also keeping type safety.
+Well why just limit yourself to bhvr when we can have magic of Tanstack Router and Query 
 
 ## Features
 
@@ -18,6 +16,7 @@ While there are plenty of existing app building stacks out there, many of them a
   - [Hono](https://hono.dev) as the backend framework
   - [Vite](https://vitejs.dev) for frontend bundling
   - [React](https://react.dev) for the frontend UI
+  - [Tanstack](https://tanstack.com) for headless, type-safe & powerful utility
 
 ## Project Structure
 
@@ -32,7 +31,7 @@ While there are plenty of existing app building stacks out there, many of them a
 
 ### Server
 
-bhvr uses Hono as a backend API for its simplicity and massive ecosystem of plugins. If you have ever used Express then it might feel familiar. Declaring routes and returning data is easy.
+bhvr++ uses Hono as a backend API for its simplicity and massive ecosystem of plugins. If you have ever used Express then it might feel familiar. Declaring routes and returning data is easy.
 
 ```
 server
@@ -70,14 +69,13 @@ app.get('/hello', async (c) => {
 export default app
 ```
 
-If you wanted to add a database to Hono you can do so with a multitude of Typescript libraries like [Supabase](https://supabase.com), or ORMs like [Drizzle](https://orm.drizzle.team/docs/get-started) or [Prisma](https://www.prisma.io/orm)
-
 ### Client
 
-bhvr uses Vite + React Typescript template, which means you can build your frontend just as you would with any other React app. This makes it flexible to add UI components like [shadcn/ui](https://ui.shadcn.com) or routing using [React Router](https://reactrouter.com/start/declarative/installation).
+bhvr uses Vite + React + Tanstack + Typescript template, which means you can build your frontend just as you would with any other React app. This makes it flexible to add UI components like [shadcn/ui](https://ui.shadcn.com)
 
 ```
 client
+├── components.json
 ├── eslint.config.js
 ├── index.html
 ├── package.json
@@ -85,11 +83,20 @@ client
 │   └── vite.svg
 ├── README.md
 ├── src
-│   ├── App.css
-│   ├── App.tsx
 │   ├── assets
+│   │   └── beaver.svg
+│   ├── components
+│   │   └── ui
+│   │       └── button.tsx
 │   ├── index.css
+│   ├── lib
+│   │   └── utils.ts
 │   ├── main.tsx
+│   ├── routes
+│   │   ├── about.tsx
+│   │   ├── index.tsx
+│   │   └── __root.tsx
+│   ├── routeTree.gen.ts
 │   └── vite-env.d.ts
 ├── tsconfig.app.json
 ├── tsconfig.json
@@ -97,58 +104,133 @@ client
 └── vite.config.ts
 ```
 
-```typescript src/App.tsx
-import { useState } from 'react'
-import beaver from './assets/beaver.svg'
-import { ApiResponse } from 'shared'
-import './App.css'
+```typescript src/routes/index.tsx
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import type { ApiResponse } from "shared";
+import beaver from "../assets/beaver.svg";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@radix-ui/react-separator";
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000"
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
-function App() {
-  const [data, setData] = useState<ApiResponse | undefined>()
-
-  async function sendRequest() {
-    try {
-      const req = await fetch(`${SERVER_URL}/hello`)
-      const res: ApiResponse = await req.json()
-      setData(res)
-    } catch (error) {
-      console.log(error)
-    }
+const fetchHelloData = async (): Promise<ApiResponse> => {
+  const response = await fetch(`${SERVER_URL}/hello`);
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
   }
+  return response.json();
+};
+
+export const Route = createFileRoute("/")({
+  component: Index,
+});
+
+function Index() {
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["helloData"],
+    queryFn: fetchHelloData,
+    enabled: false,
+  });
 
   return (
-    <>
-      <div>
-        <a href="https://github.com/stevedylandev/bhvr" target="_blank">
-          <img src={beaver} className="logo" alt="beaver logo" />
-        </a>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background/60 to-muted/30">
+      <div className="flex flex-col flex-1 items-center justify-center py-12 md:py-16">
+        <div className="flex flex-col items-center space-y-4 text-center mb-10">
+          <a
+            href="https://github.com/stevedylandev/bhvr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:scale-105 transition-transform rounded-full overflow-hidden p-1.5 bg-background/80 backdrop-blur-sm ring-1 ring-border shadow-md mb-2"
+          >
+            <img src={beaver} className="w-20 h-20" alt="beaver logo" />
+          </a>
+          <div className="space-y-2">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+              bhvr
+            </h1>
+            <h2 className="text-xl text-muted-foreground font-medium">
+              Bun + Hono + Vite + React
+            </h2>
+            <p className="text-xl">A typesafe fullstack monorepo</p>
+          </div>
+        </div>
+
+        <Card className="w-full max-w-lg border shadow-lg backdrop-blur-sm bg-card/90">
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+              API Interaction
+              <Badge
+                variant={
+                  data
+                    ? data.success
+                      ? "secondary"
+                      : "destructive"
+                    : "default"
+                }
+              >
+                {data ? (data.success ? "Success" : "Failed") : "Ready"}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-6">
+            <div className="flex gap-4 justify-center mb-6">
+              <Button onClick={() => refetch()}>Call API</Button>
+              <Button variant="outline" asChild>
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href="https://bhvr.dev"
+                >
+                  Docs
+                </a>
+              </Button>
+            </div>
+
+            {isLoading && (
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            )}
+
+            {isError && (
+              <Alert variant="destructive">
+                <AlertDescription>Error: {error.message}</AlertDescription>
+              </Alert>
+            )}
+
+            {data && (
+              <div className="bg-muted rounded-md p-4 font-mono text-sm">
+                <div className="grid grid-cols-[1fr_auto] gap-3">
+                  <span className="font-semibold text-primary">Message:</span>
+                  <span>{data.message}</span>
+                  <span className="font-semibold text-primary">Success:</span>
+                  <span>{data.success.toString()}</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="text-xs text-muted-foreground pt-6">
+            API endpoint: {SERVER_URL}/hello
+          </CardFooter>
+        </Card>
       </div>
-      <h1>bhvr</h1>
-      <h2>Bun + Hono + Vite + React</h2>
-      <p>A typesafe fullstack monorepo</p>
-      <div className="card">
-        <button onClick={sendRequest}>
-          Call API
-        </button>
-        {data && (
-          <pre className='response'>
-            <code>
-            Message: {data.message} <br />
-            Success: {data.success.toString()}
-            </code>
-          </pre>
-        )}
-      </div>
-      <p className="read-the-docs">
-        Click the beaver to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
 ```
 
 ### Shared
@@ -181,10 +263,8 @@ import { ApiResponse } from 'shared'
 
 ### Quick Start
 
-You can start a new bhvr project using the [CLI](https://github.com/stevedylandev/create-bhvr)
-
 ```bash
-bun create bhvr
+git clone https://github.com/meetVaidya/bhvr-plus-plus
 ```
 
 ### Installation
@@ -217,21 +297,6 @@ bun run build:shared  # Build the shared types package
 bun run build:client  # Build the React frontend
 ```
 
-### Deployment
-
-Deplying each piece is very versatile and can be done numerous ways, and exploration into automating these will happen at a later date. Here are some references in the meantime.
-
-**Client**
-- [Orbiter](https://orbiter.host)
-- [GitHub Pages](https://vite.dev/guide/static-deploy.html#github-pages)
-- [Netlify](https://vite.dev/guide/static-deploy.html#netlify)
-- [Cloudflare Pages](https://vite.dev/guide/static-deploy.html#cloudflare-pages)
-
-**Server**
-- [Cloudflare Worker](https://gist.github.com/stevedylandev/4aa1fc569bcba46b7169193c0498d0b3)
-- [Bun](https://hono.dev/docs/getting-started/bun)
-- [Node.js](https://hono.dev/docs/getting-started/nodejs)
-
 ## Type Sharing
 
 Types are automatically shared between the client and server thanks to the shared package and TypeScript path aliases. You can import them in your code using:
@@ -246,4 +311,6 @@ import { ApiResponse } from 'shared/types';
 - [Vite Documentation](https://vitejs.dev/guide/)
 - [React Documentation](https://react.dev/learn)
 - [Hono Documentation](https://hono.dev/docs)
+- [Tanstack Router Documentation](https://tanstack.com/router/latest/docs/framework/react/quick-start)
+- [Tanstack Query Documentation](https://tanstack.com/query/latest/docs/framework/react/quick-start)
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
